@@ -1,6 +1,10 @@
 import * as Location from 'expo-location';
 import React, { useEffect, useState } from 'react';
-import { Button, Image, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Button, Image, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import MapView, { UrlTile } from 'react-native-maps';
+
+// ✅ Replace with your actual OpenWeatherMap API key
+const apiKey = 'c6259f32c862a6c498c87d182ea451c3';
 
 export default function Index() {
   const [weather, setWeather] = useState<any>(null);
@@ -9,25 +13,18 @@ export default function Index() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [location, setLocation] = useState<any>(null);
 
-  // ✅ Replace with your actual OpenWeatherMap API key
-  const apiKey = 'c6259f32c862a6c498c87d182ea451c3';
-
-  // 🔹 Function to fetch weather data from the API
+  // 🔹 Fetch weather data
   const fetchWeather = async (lat?: string, lon?: string) => {
     try {
       const latitudeVal = lat || latitude;
       const longitudeVal = lon || longitude;
       const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitudeVal}&lon=${longitudeVal}&appid=${apiKey}&units=imperial`;
 
-      console.log('Fetching from URL:', url); // ✅ Log URL for debugging
-
+      console.log('Fetching from URL:', url);
       const response = await fetch(url);
       const data = await response.json();
 
-      console.log('Weather API Response:', data); // ✅ See full API response
-
       if (data.cod !== 200) {
-        // If API returns an error (like invalid key or bad request)
         setErrorMsg(data.message || 'Unable to fetch weather data.');
         setWeather(null);
       } else {
@@ -64,13 +61,11 @@ export default function Index() {
 
   // 🔹 Main UI
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Patrick’s Weather App</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Patrick’s Weather App 🌦️</Text>
 
-      {/* Error message */}
       {errorMsg && <Text style={styles.error}>{errorMsg}</Text>}
 
-      {/* Input fields */}
       <Text>Enter Coordinates:</Text>
 
       <TextInput
@@ -91,7 +86,7 @@ export default function Index() {
 
       <Button title="Get Weather" onPress={() => fetchWeather()} />
 
-      {/* Weather display */}
+      {/* Weather info */}
       {weather && weather.main && weather.weather ? (
         <View style={styles.weatherBox}>
           <Text style={styles.city}>{weather.name || 'Your Location'}</Text>
@@ -109,17 +104,46 @@ export default function Index() {
       ) : (
         !errorMsg && <Text>Fetching weather data...</Text>
       )}
-    </View>
+
+      {/* 🌧️ Weather Radar Map */}
+      <View style={styles.mapContainer}>
+        <Text style={styles.mapTitle}>Live Radar Map</Text>
+        <MapView
+          style={styles.map}
+          mapType="none" // ✅ Hide base Apple Map to show radar clearly
+          initialRegion={{
+            latitude: parseFloat(latitude),
+            longitude: parseFloat(longitude),
+            latitudeDelta: 1,
+            longitudeDelta: 1,
+          }}
+        >
+          {/* Base tile for context */}
+          <UrlTile
+            urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maximumZ={19}
+            zIndex={1}
+          />
+
+          {/* 🌦️ OpenWeatherMap radar overlay */}
+          <UrlTile
+            urlTemplate={`https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=${apiKey}`}
+            zIndex={2} // ✅ Ensures radar appears above the map
+            maximumZ={19}
+          />
+        </MapView>
+      </View>
+    </ScrollView>
   );
 }
 
 // 🔹 Styling
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#E3F2FD',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     padding: 20,
   },
   title: {
@@ -140,10 +164,16 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   weatherBox: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 20,
+    backgroundColor: '#FFFFFF',
+    padding: 15,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 5,
   },
   city: {
     fontSize: 22,
@@ -167,5 +197,21 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: 16,
     marginBottom: 10,
+  },
+  mapContainer: {
+    height: 300,
+    width: '100%',
+    marginTop: 20,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  map: {
+    flex: 1,
+  },
+  mapTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 5,
   },
 });
