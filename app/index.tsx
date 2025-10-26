@@ -1,6 +1,7 @@
 import * as Location from 'expo-location';
 import React, { useEffect, useState } from 'react';
-import { Button, Image, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Button, Image, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE, UrlTile } from 'react-native-maps';
 
 export default function Index() {
   const [weather, setWeather] = useState<any>(null);
@@ -12,22 +13,19 @@ export default function Index() {
   // ✅ Replace with your actual OpenWeatherMap API key
   const apiKey = 'c6259f32c862a6c498c87d182ea451c3';
 
-  // 🔹 Function to fetch weather data from the API
+  // 🔹 Fetch weather data from OpenWeatherMap
   const fetchWeather = async (lat?: string, lon?: string) => {
     try {
       const latitudeVal = lat || latitude;
       const longitudeVal = lon || longitude;
       const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitudeVal}&lon=${longitudeVal}&appid=${apiKey}&units=imperial`;
 
-      console.log('Fetching from URL:', url); // ✅ Log URL for debugging
-
+      console.log('Fetching from URL:', url);
       const response = await fetch(url);
       const data = await response.json();
-
-      console.log('Weather API Response:', data); // ✅ See full API response
+      console.log('Weather API Response:', data);
 
       if (data.cod !== 200) {
-        // If API returns an error (like invalid key or bad request)
         setErrorMsg(data.message || 'Unable to fetch weather data.');
         setWeather(null);
       } else {
@@ -40,7 +38,7 @@ export default function Index() {
     }
   };
 
-  // 🔹 Ask for location permission and get current location
+  // 🔹 Request location and load initial data
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -67,12 +65,11 @@ export default function Index() {
     <View style={styles.container}>
       <Text style={styles.title}>Weather App</Text>
 
-      {/* Error message */}
+      {/* Error Message */}
       {errorMsg && <Text style={styles.error}>{errorMsg}</Text>}
 
-      {/* Input fields */}
+      {/* Input Fields */}
       <Text>Enter Coordinates:</Text>
-
       <TextInput
         style={styles.input}
         placeholder="Enter latitude"
@@ -80,7 +77,6 @@ export default function Index() {
         value={latitude}
         onChangeText={setLatitude}
       />
-
       <TextInput
         style={styles.input}
         placeholder="Enter longitude"
@@ -88,10 +84,9 @@ export default function Index() {
         value={longitude}
         onChangeText={setLongitude}
       />
-
       <Button title="Get Weather" onPress={() => fetchWeather()} />
 
-      {/* Weather display */}
+      {/* Weather Display */}
       {weather && weather.main && weather.weather ? (
         <View style={styles.weatherBox}>
           <Text style={styles.city}>{weather.name || 'Your Location'}</Text>
@@ -109,11 +104,53 @@ export default function Index() {
       ) : (
         !errorMsg && <Text>Fetching weather data...</Text>
       )}
+
+      {/* 🌎 Map + Weather Overlay */}
+      {Platform.OS !== 'web' && latitude && longitude && (
+        <MapView
+          provider={PROVIDER_GOOGLE}
+          style={styles.map}
+          region={{
+            latitude: parseFloat(latitude),
+            longitude: parseFloat(longitude),
+            latitudeDelta: 5,
+            longitudeDelta: 5,
+          }}
+        >
+          {/* 🔥 Temperature heat overlay */}
+          <UrlTile
+            urlTemplate={`https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${apiKey}`}
+            zIndex={1}
+            maximumZ={19}
+          />
+
+          {/* ☁️ Cloud overlay (optional, can remove if cluttered) */}
+          <UrlTile
+            urlTemplate={`https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=${apiKey}`}
+            zIndex={2}
+            maximumZ={19}
+          />
+
+          {/* 📍 Marker for current location */}
+          <Marker
+            coordinate={{
+              latitude: parseFloat(latitude),
+              longitude: parseFloat(longitude),
+            }}
+            title={weather?.name || 'Location'}
+            description={
+              weather
+                ? `${weather.main.temp}°F, ${weather.weather[0].description}`
+                : 'Loading...'
+            }
+          />
+        </MapView>
+      )}
     </View>
   );
 }
 
-// 🔹 Styling
+// 🔹 Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -167,5 +204,10 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: 16,
     marginBottom: 10,
+  },
+  map: {
+    width: '100%',
+    height: 400,
+    marginTop: 20,
   },
 });
