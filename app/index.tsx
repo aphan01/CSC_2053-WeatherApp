@@ -74,10 +74,10 @@ export default function Index() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
     >
       <ScrollView
-        contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ flexGrow: 1, padding: 20 }}
       >
-      <View style={styles.container}>
+      <View style={{ flex: 1 }}>
         <Text style={styles.title}>Weather App</Text>
 
         {/* Error Message */}
@@ -177,7 +177,7 @@ export default function Index() {
 // 🔹 Styles
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#E3F2FD',
     alignItems: 'center',
     justifyContent: 'flex-start',
@@ -240,15 +240,10 @@ const styles = StyleSheet.create({
     textAlign: 'center'
   },
   mapCard: {
-    height: 320,          // 👈 fixed, reasonable height
+    marginTop: 16,
     borderRadius: 12,
     overflow: 'hidden',
-    marginTop: 12,
-    backgroundColor: '#d9e6f5',
+    height: 320,           
   },
-  map: {
-    width: '100%',
-    height: 400,
-    marginTop: 20,
-  },
+  map: { flex: 1 },
 });
