@@ -65,7 +65,7 @@ export default function Index() {
   // 🔹 Main UI
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Patrick’s Weather App</Text>
+      <Text style={styles.title}>Weather App</Text>
 
       {/* Error message */}
       {errorMsg && <Text style={styles.error}>{errorMsg}</Text>}
